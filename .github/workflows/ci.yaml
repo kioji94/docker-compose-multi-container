@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (compose, Dockerfile, shell, Python)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
+
+      - name: Lint Dockerfile (hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: app/Dockerfile
+
+      - name: Lint shell scripts (shellcheck)
+        run: shellcheck scripts/*.sh
+
+      - name: Lint Python (flake8)
+        run: |
+          pip install flake8
+          flake8 app/app.py --max-line-length=100
+
+  integration:
+    name: Build and test the compose stack
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 10
+    env:
+      WEB_PORT: "5000"
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: ci-only-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Start the stack
+        run: docker compose up -d
+
+      - name: Show running services
+        run: docker compose ps
+
+      - name: Run smoke tests
+        run: ./scripts/smoke-test.sh http://localhost:5000
+
+      - name: Verify DB is not exposed on the host
+        run: |
+          if (echo > /dev/tcp/127.0.0.1/5432) 2>/dev/null; then
+            echo "FAIL: PostgreSQL port 5432 is reachable from the host"
+            exit 1
+          fi
+          echo "OK: PostgreSQL is only reachable on the internal network"
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
