@@ -62,7 +62,7 @@ jobs:
         run: docker compose ps
 
       - name: Run smoke tests
-        run: ./scripts/smoke-test.sh http://localhost:5000
+        run: bash scripts/smoke-test.sh http://localhost:5000
 
       - name: Verify DB is not exposed on the host
         run: |

@@ -1,6 +1,6 @@
 # Multi-Container App with Docker Compose
 
-![CI](../../actions/workflows/ci.yaml/badge.svg)
+![CI](https://github.com/kioji94/docker-compose-multi-container/actions/workflows/ci.yaml/badge.svg)
 
 A two-service application orchestrated with Docker Compose: a **Flask web app** that stores data in a **PostgreSQL** database. Built as a DevOps practice project covering Docker Compose, container orchestration and container networking.
 
@@ -120,18 +120,6 @@ docker compose top
 |---------------|--------------|
 | `lint`        | `docker compose config`, hadolint (Dockerfile), shellcheck, flake8 |
 | `integration` | builds images, starts the stack, runs `scripts/smoke-test.sh`, checks the DB port is not exposed on the host, dumps logs on failure, tears everything down |
-
-## Publish to GitHub
-
-```bash
-git init -b main
-git add .
-git commit -m "feat: multi-container Flask + PostgreSQL app with Docker Compose and CI"
-git remote add origin git@github.com:<your-username>/docker-compose-multi-container.git
-git push -u origin main
-```
-
-Then open the **Actions** tab to watch the first CI run. Replace the badge URL at the top of this README with `https://github.com/<your-username>/docker-compose-multi-container/actions/workflows/ci.yaml/badge.svg`.
 
 ## Troubleshooting
 
